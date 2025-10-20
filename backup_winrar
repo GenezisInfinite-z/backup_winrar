@@ -1,0 +1,114 @@
+import os
+import subprocess
+import datetime
+from pathlib import Path
+
+def criar_backup_winrar(pasta_origem, pasta_destino, nome_arquivo=None):
+    """
+    Cria um backup em formato .rar usando WinRAR
+    
+    Args:
+        pasta_origem (str): Caminho da pasta a ser compactada
+        pasta_destino (str): Caminho onde o arquivo .rar será salvo
+        nome_arquivo (str, optional): Nome do arquivo .rar (sem extensão)
+    """
+    
+    # Verificar se a pasta de origem existe
+    if not os.path.exists(pasta_origem):
+        print(f"Erro: Pasta de origem não encontrada: {pasta_origem}")
+        return False
+    
+    # Criar pasta de destino se não existir
+    Path(pasta_destino).mkdir(parents=True, exist_ok=True)
+    
+    # Definir nome do arquivo se não foi fornecido
+    if nome_arquivo is None:
+        nome_pasta = os.path.basename(pasta_origem.rstrip('/\\'))
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        nome_arquivo = f"{nome_pasta}_backup_{timestamp}"
+    
+    # Caminho completo do arquivo .rar
+    arquivo_rar = os.path.join(pasta_destino, f"{nome_arquivo}.rar")
+    
+    # Remover arquivo anterior se existir
+    if os.path.exists(arquivo_rar):
+        try:
+            os.remove(arquivo_rar)
+            print(f"Arquivo anterior removido: {arquivo_rar}")
+        except Exception as e:
+            print(f"Erro ao remover arquivo anterior: {e}")
+            return False
+    
+    # Comando WinRAR
+    # Assumindo que WinRAR está instalado no caminho padrão
+    winrar_path = r"C:\Program Files\WinRAR\WinRAR.exe"
+    
+    # Verificar se WinRAR existe
+    if not os.path.exists(winrar_path):
+        # Tentar caminho alternativo
+        winrar_path = r"C:\Program Files (x86)\WinRAR\WinRAR.exe"
+        if not os.path.exists(winrar_path):
+            print("Erro: WinRAR não encontrado. Verifique se está instalado.")
+            return False
+    
+    # Comando para criar o arquivo RAR
+    comando = [
+        winrar_path,
+        "a",  # adicionar arquivos ao arquivo
+        "-r",  # incluir subpastas
+        "-ep1",  # excluir pasta base do caminho
+        arquivo_rar,
+        f"{pasta_origem}\\*"
+    ]
+    
+    try:
+        print(f"Iniciando backup de: {pasta_origem}")
+        print(f"Destino: {arquivo_rar}")
+        
+        # Executar comando WinRAR
+        resultado = subprocess.run(comando, capture_output=True, text=True)
+        
+        if resultado.returncode == 0:
+            print(f"Backup criado com sucesso: {arquivo_rar}")
+            
+            # Mostrar tamanho do arquivo criado
+            tamanho = os.path.getsize(arquivo_rar)
+            tamanho_mb = tamanho / (1024 * 1024)
+            print(f"Tamanho do arquivo: {tamanho_mb:.2f} MB")
+            
+            return True
+        else:
+            print(f"Erro ao criar backup: {resultado.stderr}")
+            return False
+            
+    except Exception as e:
+        print(f"Erro ao executar WinRAR: {e}")
+        return False
+
+def main():
+    """Função principal - configure aqui os caminhos"""
+    
+    # CONFIGURAÇÃO - Altere estes caminhos conforme necessário
+    pasta_origem = r"C:\\Users\\gindi\\Downloads\\t"  # Pasta a ser compactada
+    pasta_destino = r"C:\\Users\\gindi\\Downloads"  # Onde salvar o .rar
+
+    # Exemplo de uso
+    print("=== BACKUP COM WINRAR ===")
+    
+    # Solicitar caminhos ao usuário (opcional)
+    usar_input = input("Deseja informar os caminhos manualmente? (s/n): ").lower().strip()
+    
+    if usar_input == 's':
+        pasta_origem = input("Digite o caminho da pasta a ser compactada: ").strip()
+        pasta_destino = input("Digite o caminho onde salvar o backup: ").strip()
+    
+    # Criar backup
+    sucesso = criar_backup_winrar(pasta_origem, pasta_destino)
+    
+    if sucesso:
+        print("\n✅ Backup concluído com sucesso!")
+    else:
+        print("\n❌ Falha ao criar backup!")
+
+if __name__ == "__main__":
+    main()
